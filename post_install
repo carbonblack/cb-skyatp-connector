@@ -1,0 +1,7 @@
+#!/bin/sh
+
+chkconfig --add cb-fidelis-bridge
+chkconfig --level 345 cb-fidelis-bridge on
+
+# not auto-starting because conf needs to be updated
+#/etc/init.d/cb-fidelis-bridge start

@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import json
+import time
+import pprint
+import requests
+
+print "-> Fake Fidelis Device"
+print "   -------------------"
+
+if len(sys.argv) != 5:
+    print "USAGE: ServerUrl SensorIp AlertMd5 apitoken"
+    print "\n"
+    print "EXAMPLE: python fake_fidelis_device https://127.0.0.1:443/ 0.0.0.0 <md5> <apitoken>"
+    sys.exit(0)
+
+# save off the IP/name and port of the Carbon Black bridge
+#
+server_url = sys.argv[1]
+bridge_api_token = sys.argv[4]
+
+# save off the sensor IP to register an alert for
+# 0.0.0.0 can be specified to register an alert on any sensor
+#
+endpoint_ip = sys.argv[2]
+
+# save off the md5 of the alert of the on-disk file to register an alert for
+#
+alert_md5 = sys.argv[3]
+
+# build a dictionary to represent the auth header
+#
+auth = {'X-Fidelis-Token':bridge_api_token}
+
+# perform the 'echo' to verify Carbon Black bridge is accessible
+#
+echo_url = '%s/fidelis/echo' % (server_url)
+response = requests.post(echo_url, headers=auth)
+if response.status_code != 200:
+    print "-> Carbon Black Bridge Server reported failure (code %u)" % (response.status_code,)
+    response.raise_for_status()
+else:
+    print "-> Connectivity with Carbon Black Bridge Server confirmed"
+
+# perform the 'upstream check' to verify that the bridge can talk to the
+# Carbon Black Enterprise Server
+#
+upstream_check_url = '%s/fidelis/upstream/check' % (server_url)
+response = requests.get(upstream_check_url, headers=auth)
+if response.status_code != 200:
+    print "-> Carbon Black Bridge Server unable to reach upstream Enterprise Server (code %u)" % (response.status_code)
+else:
+    info = json.loads(response.content)
+    print "-> Upstream connectivity with Enterprise Server confirmed [%s]" % (info['version'],)
+
+print
+
+# build a registration request
+#
+registration = {}
+registration['cp_ip'] = '1.2.3.4'
+registration['alert_id'] = '43b6f4c4-7ad3-ba0d-0000-000000000001'
+registration['endpoint_ip'] = endpoint_ip 
+registration['ttl'] = 3600
+registration['alert_description'] = 'Serious/Malware'
+registration['alert_severity'] = '4'
+registration['alert_md5'] = alert_md5 
+registration['alert_type'] = 'exe'
+
+# register
+#
+register_url = '%s/fidelis/register' % (server_url)
+response = requests.post(register_url, data=json.dumps(registration), headers=auth)
+if response.status_code != 200:
+    print "-> Carbon Black Bridge Server rejected registration request (code %u)" % (response.status_code,)
+    response.raise_for_status()
+
+else:
+    print "-> Registered an alert with bridge server"
+
+# build a poll request
+#
+poll = {}
+poll['cp_ip'] = '1.2.3.4'
+
+# poll the bridge server for one minute+ looking for 
+# a match on the alert registration
+#
+for i in range(1,600):
+
+    time.sleep(5)
+    print "-> Polling..."
+
+    # poll
+    poll_url = '%s/fidelis/poll' % (server_url)
+    response = requests.post(poll_url, data=json.dumps(poll), headers=auth)
+    if response.status_code != 200:
+        print "-> Carbon Black Bridge Server failed poll request (code %d)" % (response.status_code)
+        continue
+
+    # deserialize the response
+    #
+    hits = response.json()
+
+    # if there is match, output it and stop polling
+    #
+    if len(hits) > 0:
+        pprint.pprint(hits[0])
+        #break
+
+# build an deregistration request
+#
+deregistration = {}
+deregistration['cp_ip'] = '1.2.3.4'
+deregistration['alert_id'] = '43b6f4c4-7ad3-ba0d-0000-000000000001'
+
+# deregister
+deregister_url = '%s/fidelis/deregister' % (server_url)
+response = requests.post(deregister_url, data=json.dumps(deregistration), headers=auth)
+if response.status_code != 200:
+    print "-> Carbon Black Bridge Server rejected deregistration request (code %u)" % (response.status_code,)
+    response.raise_for_status()
+else:
+    print "-> Unregistered an alert with bridge server"

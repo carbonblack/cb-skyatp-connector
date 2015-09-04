@@ -1,0 +1,5 @@
+#!/bin/sh
+
+/etc/init.d/cb-fidelis-bridge stop
+
+chkconfig --del cb-fidelis-bridge
