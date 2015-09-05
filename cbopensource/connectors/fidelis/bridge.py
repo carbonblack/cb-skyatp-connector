@@ -1,3 +1,6 @@
+
+from __future__ import division
+
 import os
 import sys
 import json
@@ -18,7 +21,6 @@ import cbint.utils.flaskfeed
 import cbint.utils.cbserver
 from cbint.utils.daemon import CbIntegrationDaemon
 
-from __future__ import division
 
 def timedelta_total_seconds( td ):
     return (td.microseconds + (td.seconds + td.days * 86400) * 1000000) / 1000000
