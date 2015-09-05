@@ -10,7 +10,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-exec="/usr/share/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge"
+exec="/usr/share/cb/integrations/carbonblack_fidelis_bridge/cb-fidelis-connector"
 prog="cb-fidelis-bridge"
 pidfile="/var/run/cb/integrations/carbonblack_fidelis_bridge.pid"
 

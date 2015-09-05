@@ -7,9 +7,10 @@ import struct
 import socket
 import logging
 import threading
+import requests
 from datetime import datetime, timedelta
 
-import cbfidelisbridge.version
+from . import version
 import cbapi
 import cbint.utils.json
 import cbint.utils.feed
@@ -50,6 +51,8 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         self.registrations_lock = threading.RLock()
         self.alert_hits = []
         self.alert_hits_lock = threading.RLock()
+        requests.get('http://localhost')
+
 
     def on_start(self):
         self.debug = self.bridge_options.get('debug', "0") != "0"
@@ -66,7 +69,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         if self.debug:
             self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("starting Carbon Black <-> Fidelis Bridge | version %s" % cbfidelisbridge.version.__version__)
+        self.logger.info("starting Carbon Black <-> Fidelis Bridge | version %s" % version.__version__)
 
         self.logger.debug("initializing cbapi")
         sslverify = False if self.bridge_options.get('carbonblack_server_sslverify', "0") == "0" else True
@@ -126,8 +129,8 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         #
         self.authenticate_api_user(flask.request.headers)
 
-        version = {'Version': cbfidelisbridge.version.__version__, 'Product': 'Carbon Black Fidelis Bridge'}
-        return flask.Response(response=cbint.utils.json.json_encode(version), mimetype='application/json')
+        ver = {'Version': version.__version__, 'Product': 'Carbon Black Fidelis Bridge'}
+        return flask.Response(response=cbint.utils.json.json_encode(ver), mimetype='application/json')
 
     def handle_fidelis_upstream_check(self):
         """
