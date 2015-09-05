@@ -28,6 +28,11 @@ UNKNOWN
 %build
 pyinstaller cb-fidelis-connector.spec
 
+%pre
+if [ -f "/etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf" ]; then
+    cp /etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf /tmp/__bridge.conf.backup
+fi
+
 %install
 python setup.py install_cb --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 
@@ -43,6 +48,9 @@ chkconfig --level 345 cb-fidelis-bridge on
 
 # not auto-starting because conf needs to be updated
 #/etc/init.d/cb-fidelis-bridge start
+if [ -f "/tmp/__bridge.conf.backup" ]; then
+    mv /tmp/__bridge.conf.backup /etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf
+fi
 
 
 %preun
