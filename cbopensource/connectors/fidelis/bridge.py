@@ -246,9 +246,12 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         #
         if not str(registration['ttl']).isdigit():
             registration['ttl'] = "600"
+        now = datetime.now()
+        epoch_seconds = (now - datetime.datetime(1970,1,1)).total_seconds()
 
-        registration['recv_timestamp'] = datetime.now()
-        registration['expire_timestamp'] = datetime.now() + timedelta(seconds=int(registration['ttl']))
+        registration['recv_timestamp'] = now
+        registration['recv_timestamp_epoch_secs'] = epoch_seconds
+        registration['expire_timestamp'] = now + timedelta(seconds=int(registration['ttl']))
 
         # enable the registration
         # registrations are enabled at 'register' time
@@ -450,7 +453,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         report['iocs']['md5'].append(alert_reg['alert_md5'])
         if alert_reg.has_key('alert_related_md5s'):
             report['iocs']['md5'] += alert_reg['alert_related_md5s']
-        report['timestamp'] = alert_reg['recv_timestamp']
+        report['timestamp'] = alert_reg['recv_timestamp_epoch_secs']
         report['link'] = "https://%s/j/alert.html?$(%s)" % (alert_reg['cp_ip'], alert_reg['alert_id'])
         report['title'] = alert_reg['alert_description']
         report['score'] = self.translate_score(alert_reg['alert_severity'])
