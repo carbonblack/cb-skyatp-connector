@@ -1,6 +1,6 @@
 __author__ = 'jgarman'
 
-#from cbopensource.connectors.fidelis import __version__
+#from cbopensource.connectors.fidelis.version import __version__
 
 from distutils.core import setup
 from distutils.core import Command
@@ -149,7 +149,7 @@ scripts = {
 
 setup(
     name='python-cb-fidelis-bridge',
-    version='1.2',
+    version="1.2",
     packages=['cbopensource', 'cbopensource.connectors', 'cbopensource.connectors.fidelis'],
     url='https://github.com/carbonblack/cb-fidelis-connector',
     license='MIT',

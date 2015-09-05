@@ -5,7 +5,7 @@ import sys
 import os
 
 import cbopensource.connectors.fidelis.bridge as bridge
-from cbopensource.connectors.fidelis import __version__
+from cbopensource.connectors.fidelis.version import __version__
 
 if __name__ == "__main__":
     name = "carbonblack_fidelis_bridge"
