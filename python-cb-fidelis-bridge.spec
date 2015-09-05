@@ -55,7 +55,9 @@ chkconfig --del cb-fidelis-bridge
 
 %files -f INSTALLED_FILES
 %defattr(-,root,root)
+
 %config
 /etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf.template
+
 %config(noreplace)
 /etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf
