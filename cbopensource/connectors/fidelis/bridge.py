@@ -8,7 +8,7 @@ import socket
 import logging
 import threading
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, tzinfo
 
 from . import version
 import cbapi
@@ -18,6 +18,41 @@ import cbint.utils.flaskfeed
 import cbint.utils.cbserver
 from cbint.utils.daemon import CbIntegrationDaemon
 
+from __future__ import division
+
+def timedelta_total_seconds( td ):
+    return (td.microseconds + (td.seconds + td.days * 86400) * 1000000) / 1000000
+
+ZERO = timedelta(0)
+HOUR = timedelta(hours=1)
+
+class UTC(tzinfo):
+    """UTC"""
+    def utcoffset(self, dt):
+        return ZERO
+
+    def tzname(self, dt):
+        return "UTC"
+
+    def dst(self, dt):
+        return ZERO
+
+TZ_UTC = UTC()
+
+
+def get_utcnow_with_tzinfo():
+    u = datetime.utcnow()
+    u = u.replace(tzinfo=TZ_UTC)
+    return u
+
+def with_utc_tzinfo(date_value):
+    if date_value.tzinfo is None:
+        return date_value.replace(tzinfo=TZ_UTC)
+    else:
+        return date_value.astimezone(TZ_UTC)
+
+def get_epoch_seconds(d):
+    return timedelta_total_seconds(d - with_utc_tzinfo(datetime.datetime(1970,1,1)))
 
 class CarbonBlackFidelisBridge(CbIntegrationDaemon):
 
@@ -246,11 +281,12 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         #
         if not str(registration['ttl']).isdigit():
             registration['ttl'] = "600"
-        now = datetime.now()
-        epoch_seconds = (now - datetime.datetime(1970,1,1)).total_seconds()
 
-        registration['recv_timestamp'] = now
-        registration['recv_timestamp_epoch_secs'] = epoch_seconds
+        now = get_utcnow_with_tzinfo()
+
+        epoch_seconds = get_epoch_seconds(now)
+
+        registration['recv_timestamp'] = epoch_seconds
         registration['expire_timestamp'] = now + timedelta(seconds=int(registration['ttl']))
 
         # enable the registration
@@ -453,7 +489,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         report['iocs']['md5'].append(alert_reg['alert_md5'])
         if alert_reg.has_key('alert_related_md5s'):
             report['iocs']['md5'] += alert_reg['alert_related_md5s']
-        report['timestamp'] = alert_reg['recv_timestamp_epoch_secs']
+        report['timestamp'] = alert_reg['recv_timestamp']
         report['link'] = "https://%s/j/alert.html?$(%s)" % (alert_reg['cp_ip'], alert_reg['alert_id'])
         report['title'] = alert_reg['alert_description']
         report['score'] = self.translate_score(alert_reg['alert_severity'])
@@ -492,7 +528,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         checks active sensor registrations list for any that are expired, and
         removes them.
         """
-        now = datetime.now()
+        now = get_utcnow_with_tzinfo()
 
         with self.registrations_lock:
             registrations_to_remove = []
