@@ -107,7 +107,13 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
                                 host=address, use_reloader=False)
 
     def handle_json_feed_request(self):
-        return self.flask_feed.generate_json_feed(self.feed)
+        try:
+            return self.flask_feed.generate_json_feed(self.feed)
+        except:
+            import traceback
+            e = traceback.format_exc()
+            self.logger.error(e)
+            return flask.abort(500)
 
     def handle_html_feed_request(self):
         return self.flask_feed.generate_html_feed(self.feed, self.display_name)
