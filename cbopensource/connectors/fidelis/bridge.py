@@ -701,8 +701,8 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
             matching_process['id'] = id
             matching_process['process_name'] = process.get('process_name', '<UNKNOWN>')
             matching_process['process_md5'] = process.get('process_md5', '<UNKNOWN>')
-            matching_process['relative_url'] = "/#/analyze/%s/%s" % (str(id), str(process['segment_id']))
-            matching_process['absolute_url'] = "%s/#/analyze/%s/%s" % (trim_slash_if_necessary(self.bridge_options['carbonblack_server_url']),
+            matching_process['relative_url'] = "/#analyze/%s/%s" % (str(id), str(process['segment_id']))
+            matching_process['absolute_url'] = "%s/#analyze/%s/%s" % (trim_slash_if_necessary(self.bridge_options['carbonblack_server_url']),
                                                                        str(id), str(process['segment_id']))
             matching_process['start'] = process.get('start', '<UNKNOWN>')
             matching_process['netconns'] = processed_netconns
