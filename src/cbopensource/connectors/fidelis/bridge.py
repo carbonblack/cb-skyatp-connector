@@ -31,8 +31,8 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         self.feed = {}
         self.feed_synchronizer = None
         self.directory = os.path.dirname(os.path.realpath(__file__))
-        self.cb_image_path = "/content/carbonblack.png"
-        self.integration_image_path = "/content/fidelis.png"
+        self.cb_image_path = "/usr/share/cb/integrations/carbonblack_fidelis_bridge/carbonblack.png"
+        self.integration_image_path = "/usr/share/cb/integrations/carbonblack_fidelis_bridge/fidelis.png"
         self.json_feed_path = "/fidelis/json"
 
         self.flask_feed.app.add_url_rule(self.cb_image_path, view_func=self.handle_cb_image_request)
