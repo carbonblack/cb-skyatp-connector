@@ -103,8 +103,8 @@ class install_cb(Command):
             self.mkpath(dir)
 
             data = os.path.join('dist', scriptname)
-            (out, _) = self.copy_file(data, dir, preserve_mode=True)
-            self.outfiles.append(out)
+            out = self.copy_tree(data, dir, preserve_mode=True)
+            self.outfiles.extend(out)
 
         if self.record:
             outputs = self.get_outputs()
@@ -116,7 +116,6 @@ class install_cb(Command):
                          (self.record, outputs),
                          "writing list of installed files to '%s'" %
                          self.record)
-
 
     def get_inputs(self):
         return self.data_files or []
@@ -143,13 +142,13 @@ data_files.append('scripts/cb-fidelis-connector')
 scripts = {
     'cb-fidelis-connector': {
         'spec': 'cb-fidelis-connector.spec',
-        'dest': '/usr/share/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge'
+        'dest': '/usr/share/cb/integrations/carbonblack_fidelis_bridge/bin/'
     }
 }
 
 setup(
     name='python-cb-fidelis-bridge',
-    version="1.2",
+    version="1.3",
     packages=['cbopensource', 'cbopensource.connectors', 'cbopensource.connectors.fidelis'],
     url='https://github.com/carbonblack/cb-fidelis-connector',
     license='MIT',

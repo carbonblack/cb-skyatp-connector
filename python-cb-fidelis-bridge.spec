@@ -1,6 +1,6 @@
 %define name python-cb-fidelis-bridge
-%define version 1.2
-%define unmangled_version 1.2
+%define version 1.3
+%define unmangled_version 1.3
 %define release 1
 %global _enable_debug_package 0
 %global debug_package %{nil}

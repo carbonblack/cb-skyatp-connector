@@ -91,8 +91,6 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         self.registrations_lock = threading.RLock()
         self.alert_hits = []
         self.alert_hits_lock = threading.RLock()
-        requests.get('http://localhost')
-
 
     def on_start(self):
         self.debug = self.bridge_options.get('debug', "0") != "0"
