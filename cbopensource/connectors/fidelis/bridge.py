@@ -73,7 +73,8 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         self.directory = os.path.dirname(os.path.realpath(__file__))
         self.cb_image_path = "/content/carbonblack.png"
         self.full_cb_image_path = "/usr/share/cb/integrations/carbonblack_fidelis_bridge/carbonblack.png"
-        self.integration_image_path = "/usr/share/cb/integrations/carbonblack_fidelis_bridge/fidelis.png"
+        self.integration_image_path = "/content/fidelis.png"
+        self.full_integration_image_path = "/usr/share/cb/integrations/carbonblack_fidelis_bridge/fidelis.png"
         self.json_feed_path = "/fidelis/json"
 
         self.flask_feed.app.add_url_rule(self.cb_image_path, view_func=self.handle_cb_image_request)
@@ -164,7 +165,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         return self.flask_feed.generate_image_response(image_path="%s" % self.full_cb_image_path)
 
     def handle_integration_image_request(self):
-        return self.flask_feed.generate_image_response(image_path="%s" % self.integration_image_path)
+        return self.flask_feed.generate_image_response(image_path="%s" % self.full_integration_image_path)
 
     def handle_fidelis_echo(self):
         """

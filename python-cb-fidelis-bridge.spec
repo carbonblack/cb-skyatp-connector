@@ -1,7 +1,7 @@
 %define name python-cb-fidelis-bridge
 %define version 1.3
 %define unmangled_version 1.3
-%define release 1
+%define release 2 
 %global _enable_debug_package 0
 %global debug_package %{nil}
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
@@ -16,8 +16,8 @@ Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 BuildArch: x86_64
-Vendor: Bit9
-Url: http://www.bit9.com/
+Vendor: Carbon Black Inc.
+Url: http://www.carbonblack.com/
 
 %description
 UNKNOWN
