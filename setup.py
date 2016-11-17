@@ -148,12 +148,12 @@ scripts = {
 
 setup(
     name='python-cb-fidelis-bridge',
-    version="1.3",
+    version="1.4",
     packages=['cbopensource', 'cbopensource.connectors', 'cbopensource.connectors.fidelis'],
     url='https://github.com/carbonblack/cb-fidelis-connector',
     license='MIT',
-    author='Bit9 + Carbon Black Developer Network',
-    author_email='dev-support@bit9.com',
+    author='Carbon Black Developer Network',
+    author_email='dev-support@carbonblack.com',
     description=
         'Connector between Carbon Black and Fidelis XPS',
     data_files=data_files,
