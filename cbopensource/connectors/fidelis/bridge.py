@@ -263,9 +263,20 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         # @todo - use cbapi to perform this action
         #         in the meantime, specify 1.1.1.1 to see failure
         #
+
         if "0.0.0.0" != registration['endpoint_ip']:
             self.logger.debug("looking up endpoint IP '%s'..." % registration['endpoint_ip'])
-            sensors = self.cb.sensors({'ip': registration['endpoint_ip']})
+
+            #
+            # There is a regression in the v1 sensor endpoint in CB Response 5.2
+            # When there are no sensors found, a 500 is used as the response.
+            # This is a workaround to check for a 500 from the Cb Response server
+            #
+            try:
+                sensors = self.cb.sensors({'ip': registration['endpoint_ip']})
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 500:
+                    flask.abort(412)
             if 0 == len(sensors):
                 flask.abort(412)
             registration['sensor_id'] = sensors[0]['id']

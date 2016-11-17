@@ -25,7 +25,7 @@ listener_address=0.0.0.0
 ;
 ; if missing, then no authentication is enforced
 ;
-listener_api_token=supersecretpassword
+listener_api_token=
 
 ;
 ; Carbon Black Enterprise Server options
@@ -34,12 +34,12 @@ listener_api_token=supersecretpassword
 ;
 ; Carbon Black Enterprise Server URL
 ;
-carbonblack_server_url=https://127.0.0.1/
+carbonblack_server_url=https://192.168.1.42
 
 ;
 ; Carbon Black Enterprise Server API Token
 ;
-carbonblack_server_token=ac9be4a53df454b7d986c69016a93a9b6cd15b27
+carbonblack_server_token=a2804ba04a108d22607099b183ab244de5e2d1e6
 
 ;
 ; Carbon Black Enterprise Server SSL Verfication
