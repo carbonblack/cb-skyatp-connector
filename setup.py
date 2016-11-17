@@ -148,7 +148,7 @@ scripts = {
 
 setup(
     name='python-cb-fidelis-bridge',
-    version="1.4",
+    version="1.3",
     packages=['cbopensource', 'cbopensource.connectors', 'cbopensource.connectors.fidelis'],
     url='https://github.com/carbonblack/cb-fidelis-connector',
     license='MIT',
