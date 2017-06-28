@@ -1,4 +1,3 @@
-
 from __future__ import division
 
 import os
@@ -6,32 +5,43 @@ import sys
 import json
 import time
 import flask
-import struct
-import socket
+from flask import jsonify
 import logging
+import traceback
+from logging.handlers import RotatingFileHandler
 import threading
-import requests
 from datetime import datetime, timedelta, tzinfo
 
 from . import version
-import cbapi
+
+from cbapi.response.rest_api import CbResponseAPI
+from cbapi.response.models import Feed, Sensor, Process
+
 import cbint.utils.json
 import cbint.utils.feed
 import cbint.utils.flaskfeed
 import cbint.utils.cbserver
+import cbint.utils.filesystem
 from cbint.utils.daemon import CbIntegrationDaemon
+
+logger = logging.getLogger(__name__)
+
 
 def trim_slash_if_necessary(s):
     return s.rstrip("/")
 
-def timedelta_total_seconds( td ):
+
+def timedelta_total_seconds(td):
     return (td.microseconds + (td.seconds + td.days * 86400) * 1000000) / 1000000
+
 
 ZERO = timedelta(0)
 HOUR = timedelta(hours=1)
 
+
 class UTC(tzinfo):
     """UTC"""
+
     def utcoffset(self, dt):
         return ZERO
 
@@ -41,6 +51,7 @@ class UTC(tzinfo):
     def dst(self, dt):
         return ZERO
 
+
 TZ_UTC = UTC()
 
 
@@ -49,22 +60,23 @@ def get_utcnow_with_tzinfo():
     u = u.replace(tzinfo=TZ_UTC)
     return u
 
+
 def with_utc_tzinfo(date_value):
     if date_value.tzinfo is None:
         return date_value.replace(tzinfo=TZ_UTC)
     else:
         return date_value.astimezone(TZ_UTC)
 
+
 def get_epoch_seconds(d):
-    return timedelta_total_seconds(d - with_utc_tzinfo(datetime(1970,1,1)))
+    return timedelta_total_seconds(d - with_utc_tzinfo(datetime(1970, 1, 1)))
+
 
 class CarbonBlackFidelisBridge(CbIntegrationDaemon):
-
     def __init__(self, name, configfile):
         CbIntegrationDaemon.__init__(self, name, configfile=configfile)
         self.flask_feed = cbint.utils.flaskfeed.FlaskFeed(__name__)
         self.bridge_options = {}
-        self.debug = False
         self.cb = None
         self.feed_name = "Fidelis"
         self.display_name = self.feed_name
@@ -76,6 +88,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         self.integration_image_path = "/content/fidelis.png"
         self.full_integration_image_path = "/usr/share/cb/integrations/carbonblack_fidelis_bridge/fidelis.png"
         self.json_feed_path = "/fidelis/json"
+        self.logfile = None
 
         self.flask_feed.app.add_url_rule(self.cb_image_path, view_func=self.handle_cb_image_request)
         self.flask_feed.app.add_url_rule(self.integration_image_path, view_func=self.handle_integration_image_request)
@@ -83,66 +96,81 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         self.flask_feed.app.add_url_rule("/", view_func=self.handle_index_request, methods=['GET'])
         self.flask_feed.app.add_url_rule("/feed.html", view_func=self.handle_html_feed_request, methods=['GET'])
         self.flask_feed.app.add_url_rule("/fidelis/echo", view_func=self.handle_fidelis_echo, methods=['POST', 'GET'])
-        self.flask_feed.app.add_url_rule("/fidelis/upstream/check", view_func=self.handle_fidelis_upstream_check, methods=['GET'])
-        self.flask_feed.app.add_url_rule("/fidelis/register", view_func=self.handle_fidelis_registration, methods=['POST'])
+        self.flask_feed.app.add_url_rule("/fidelis/upstream/check", view_func=self.handle_fidelis_upstream_check,
+                                         methods=['GET'])
+        self.flask_feed.app.add_url_rule("/fidelis/register", view_func=self.handle_fidelis_registration,
+                                         methods=['POST'])
         self.flask_feed.app.add_url_rule("/fidelis/poll", view_func=self.handle_fidelis_poll, methods=['POST'])
-        self.flask_feed.app.add_url_rule("/fidelis/deregister", view_func=self.handle_fidelis_deregistration, methods=['POST'])
+        self.flask_feed.app.add_url_rule("/fidelis/deregister", view_func=self.handle_fidelis_deregistration,
+                                         methods=['POST'])
+
+
 
         self.registrations = []
         self.registrations_lock = threading.RLock()
         self.alert_hits = []
         self.alert_hits_lock = threading.RLock()
 
-    def on_start(self):
-        self.debug = self.bridge_options.get('debug', "0") != "0"
-        if self.debug:
-            self.logger.setLevel(logging.DEBUG)
+        self.initialize_logging()
 
-    def on_stopping(self):
-        self.debug = self.bridge_options.get('debug', "0") != "0"
-        if self.debug:
-            self.logger.setLevel(logging.DEBUG)
+        self.flask_feed.app.register_error_handler(Exception, self.exception_handler)
+
+    def exception_handler(error):
+        logger.error(traceback.format_exc())
+        return flask.abort(500)
+
+    def initialize_logging(self):
+
+        if not self.logfile:
+            log_path = "/var/log/cb/integrations/%s/" % self.name
+            cbint.utils.filesystem.ensure_directory_exists(log_path)
+            self.logfile = "%s%s.log" % (log_path, self.name)
+
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.handlers = []
+
+        rlh = RotatingFileHandler(self.logfile, maxBytes=524288, backupCount=10)
+        rlh.setFormatter(logging.Formatter(fmt="%(asctime)s: %(module)s: %(levelname)s: %(message)s"))
+        root_logger.addHandler(rlh)
 
     def run(self):
-        self.debug = self.bridge_options.get('debug', "0") != "0"
-        if self.debug:
-            self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("starting Carbon Black <-> Fidelis Bridge | version %s" % version.__version__)
+        logger.info("starting Carbon Black <-> Fidelis Bridge | version %s" % version.__version__)
 
-        self.logger.debug("initializing cbapi")
+        logger.debug("initializing cbapi")
         sslverify = False if self.bridge_options.get('carbonblack_server_sslverify', "0") == "0" else True
-        self.cb = cbapi.CbApi(self.bridge_options['carbonblack_server_url'],
-                              token=self.bridge_options['carbonblack_server_token'],
-                              ssl_verify=sslverify)
 
-        self.logger.debug("generating feed metadata")
+        self.cb = CbResponseAPI(url=self.bridge_options['carbonblack_server_url'],
+                                token=self.bridge_options['carbonblack_server_token'],
+                                ssl_verify=sslverify)
+
+        logger.debug("generating feed metadata")
         self.feed = cbint.utils.feed.generate_feed(self.feed_name, summary="Fidelis on-premise IOC feed",
-                    tech_data="There are no requirements to share any data with Carbon Black to use this feed.  The underlying IOC data is provided by an on-premise Fidelis device",
-                    provider_url="http://www.fidelissecurity.com/",
-                    icon_path="%s" % (self.integration_image_path),
-                    display_name=self.display_name, category="Connectors")
+                                                   tech_data="There are no requirements to share any data with Carbon Black to use this feed.  The underlying IOC data is provided by an on-premise Fidelis device",
+                                                   provider_url="http://www.fidelissecurity.com/",
+                                                   icon_path="%s" % (self.integration_image_path),
+                                                   display_name=self.display_name, category="Connectors")
 
-        self.logger.debug("starting maintenance thread")
+        logger.debug("starting maintenance thread")
         work_thread = threading.Thread(target=self.perform_maintenance)
         work_thread.setDaemon(True)
         work_thread.start()
 
-        self.logger.debug("starting feed synchronizer")
+        logger.debug("starting feed synchronizer")
         self.feed_synchronizer = cbint.utils.feed.FeedSyncRunner(self.cb, self.feed_name,
                                                                  self.bridge_options.get('feed_sync_interval', 15))
         if not self.feed_synchronizer.sync_supported:
-            self.logger.warn("feed synchronization is not supported by the associated Carbon Black enterprise server")
+            logger.warn("feed synchronization is not supported by the associated Carbon Black enterprise server")
 
-        self.logger.debug("starting flask")
+        logger.debug("starting flask")
         self.serve()
 
     def serve(self):
         address = self.bridge_options.get('listener_address', '0.0.0.0')
         port = self.bridge_options['listener_port']
-        self.logger.info("starting flask server: %s:%s" % (address, port))
-        self.flask_feed.app.run(port=port, debug=self.debug,
-                                host=address, use_reloader=False)
+        logger.info("starting flask server: %s:%s" % (address, port))
+        self.flask_feed.app.run(port=port, debug=False, host=address, use_reloader=False)
 
     def handle_json_feed_request(self):
         try:
@@ -150,7 +178,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         except:
             import traceback
             e = traceback.format_exc()
-            self.logger.error(e)
+            logger.error(e)
             return flask.abort(500)
 
     def handle_html_feed_request(self):
@@ -265,25 +293,22 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         #
 
         if "0.0.0.0" != registration['endpoint_ip']:
-            self.logger.debug("looking up endpoint IP '%s'..." % registration['endpoint_ip'])
+            logger.debug("looking up endpoint IP '%s'..." % registration['endpoint_ip'])
 
             #
             # There is a regression in the v1 sensor endpoint in CB Response 5.2
             # When there are no sensors found, a 500 is used as the response.
             # This is a workaround to check for a 500 from the Cb Response server
             #
-            try:
-                sensors = self.cb.sensors({'ip': registration['endpoint_ip']})
-            except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 500:
-                    flask.abort(412)
-            if 0 == len(sensors):
+
+            sensors = self.cb.select(Sensor).where("ip:" + registration['endpoint_ip'])
+            if len(sensors) == 0:
                 flask.abort(412)
-            registration['sensor_id'] = sensors[0]['id']
-            registration['computer_name'] = sensors[0]['computer_name']
-            self.logger.debug("mapped '%s' to SensorId %d" % (registration['endpoint_ip'], registration['sensor_id']))
+            registration['sensor_id'] = sensors[0].id
+            registration['computer_name'] = sensors[0].computer_name
+            logger.debug("mapped '%s' to SensorId %d" % (registration['endpoint_ip'], registration['sensor_id']))
         else:
-            self.logger.debug("no endpoint IP specified [this is ok]")
+            logger.debug("no endpoint IP specified [this is ok]")
 
         # verify that the current number of active registrations is within range
         # @todo make this a confg file option
@@ -317,7 +342,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         #
         with self.registrations_lock:
             self.registrations.append(registration)
-            self.logger.debug("registered a new alert from Fidelis device with Id %s" % (registration['alert_id']))
+            logger.debug("registered a new alert from Fidelis device with Id %s" % (registration['alert_id']))
             self.alertregistration_to_report(registration)
 
         return flask.make_response("Thanks!")
@@ -346,6 +371,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         """
         # authenticate
         #
+
         self.authenticate_api_user(flask.request.headers)
 
         # decode the raw poll request
@@ -369,7 +395,8 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
             for alert_hit in alert_hits_local:
                 self.alert_hits.remove(alert_hit)
 
-            return flask.Response(response=json.dumps(alert_hits_local), mimetype='application/json')
+            return jsonify(alert_hits_local)
+
 
     def handle_fidelis_deregistration(self):
         """
@@ -428,11 +455,13 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         registration_to_remove = None
         with self.registrations_lock:
             for registration in self.registrations:
-                if registration['cp_ip'] == deregistration['cp_ip'] and registration['alert_id'] == deregistration['alert_id']:
+                if registration['cp_ip'] == deregistration['cp_ip'] and registration['alert_id'] == deregistration[
+                    'alert_id']:
                     registration_to_remove = registration
 
             if None == registration_to_remove:
-                self.logger.debug("no such registration [%s {%s}]" % (deregistration['cp_ip'], deregistration['alert_id']))
+                logger.debug(
+                    "no such registration [%s {%s}]" % (deregistration['cp_ip'], deregistration['alert_id']))
                 flask.abort(404)
 
             # disable (rather than wholly remove) the registration
@@ -441,7 +470,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
             #
             registration_to_remove['enabled'] = False
 
-        self.logger.debug("removed alert {%s}" % deregistration['alert_id'])
+        logger.debug("removed alert {%s}" % deregistration['alert_id'])
 
         return flask.make_response("Thanks!")
 
@@ -463,7 +492,8 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
                 #
                 self.expire_registrations()
             except Exception as e:
-                self.logger.warn("Error during maintenance loop: %s" % e)
+                logger.warn("Error during maintenance loop: %s" % e)
+                logger.error(traceback.format_exc())
 
             # increase the time to sleep by 1 second on each iteration, ultimately
             # stopping at 60s in total.  this makes debugging a lot easier :)
@@ -548,60 +578,11 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
             registrations_to_remove = []
             for registration in self.registrations:
                 if registration['expire_timestamp'] < now:
-                    self.logger.debug("Removing registration [%s] due to expired ttl" % registration['alert_id'])
+                    logger.debug("Removing registration [%s] due to expired ttl" % registration['alert_id'])
                     registrations_to_remove.append(registration)
 
             for registration in registrations_to_remove:
                 self.registrations.remove(registration)
-
-    def translate_filetype(self, filetype):
-        """
-        translate a Carbon Black numeric filetype enumeration value
-        to a human-readable string representation of file type
-        """
-        #define FILE_TYPE_UNKNOWN           0x0000
-        #define FILE_TYPE_BINARY            0x0001  // Windows
-        #define FILE_TYPE_ELF               0x0002  // Unix
-        #define FILE_TYPE_UNIVERSAL_BIN     0x0003  // OSX
-        #define FILE_TYPE_EICAR             0x0008
-        #define FILE_TYPE_OFFICE_LEGACY     0x0010
-        #define FILE_TYPE_OFFICE_OPENXML    0x0011
-        #define FILE_TYPE_PDF               0x0030
-        #define FILE_TYPE_ARCHIVE_PKZIP     0x0040
-        #define FILE_TYPE_ARCHIVE_LZH       0x0041
-        #define FILE_TYPE_ARCHIVE_LZW       0x0042
-        #define FILE_TYPE_ARCHIVE_RAR       0x0043
-        #define FILE_TYPE_ARCHIVE_TAR       0x0044
-        #define FILE_TYPE_ARCHIVE_7ZIP      0x0045
-
-        if 0x1 == filetype:
-            return "PE"
-        elif 0x2 == filetype:
-            return "Elf"
-        elif 0x3 == filetype:
-           return "Universal Binary"
-        elif 0x8 == filetype:
-           return "EICAR"
-        elif 0x10 == filetype:
-            return "Microsoft Office Legacy"
-        elif 0x11 == filetype:
-            return "Microsoft Office OpenXML"
-        elif 0x30 == filetype:
-            return "PDF"
-        elif 0x40 == filetype:
-            return "zip"
-        elif 0x41 == filetype:
-            return "lzh"
-        elif 0x42 == filetype:
-            return "lzw"
-        elif 0x43 == filetype:
-            return "rar"
-        elif 0x44 == filetype:
-            return "tar"
-        elif 0x45 == filetype:
-            return "7zip"
-        else:
-            return "<UNKNOWN>"
 
     def search_registration(self, registration):
         """
@@ -625,8 +606,9 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         # todo: consider adding alternate md5s from the registration
         # todo: consider modload_md5 or process_md5, rather than only process_md5
 
-        search_results = self.cb.process_search(query)
-        if len(search_results['results']) < 1:
+        search_results = self.cb.select(Process).where(query)
+
+        if len(search_results) < 1:
             # no matches
             return False
 
@@ -635,27 +617,24 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         # loop over all the returned documents
         # a fidelis-specific summary of each will be provided
         #
-        for search_result in search_results['results']:
+        for search_result in search_results:
 
-            process_id = search_result['id']
-            segment_id = search_result['segment_id']
+            process = search_result
 
-            process = self.cb.process_events(process_id, segment_id)['process']
             processed_netconns = []
-            raw_netconns = process.get('netconn_complete', [])
-            for raw_netconn in raw_netconns:
-                timestamp, ip, port, proto, domain, direction = raw_netconn.split('|')
+            netconns = search_result.netconns  # process.get('netconn_complete', [])
+            for netconn in netconns:
+
+                timestamp = netconn.timestamp
+                ip = netconn.remote_ip
+                port = netconn.remote_port
+                proto = netconn.proto
+                domain = netconn.domain
+                direction = netconn.direction
 
                 processed_netconn = {}
 
-                # the ip may not be present if the netconn was observed talking via
-                # a web proxy.  as of this writing, the key ('ip') itself is present,
-                # but the value is an empty string.
-                #
-                try:
-                     processed_netconn['ip'] = socket.inet_ntoa(struct.pack("!i", int(ip)))
-                except Exception, e:
-                    pass
+                processed_netconn['ip'] = ip
 
                 processed_netconn['port'] = port
                 processed_netconn['protocol'] = proto
@@ -666,59 +645,46 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
                 processed_netconns.append(processed_netconn)
 
             processed_filewrites = []
-            raw_filewrites = process.get('filemod_complete', [])
-            for raw_filewrite in raw_filewrites:
+            filemods = process.filemods
+            for filemod in filemods:
+
+                logger.debug(str(filemod))
 
                 processed_filewrite = {}
 
-                raw_fields = raw_filewrite.split('|')
-
-                # avoid processing any older SOLR data (pre-4.1 server)
-                #
-                if len(raw_fields) != 5:
-                    continue
-
                 # avoid processing any non-filewrite-complete events
                 #
-                if '8' != raw_fields[0]:
+                if 'LastWrote'.lower() != filemod.type.lower():
                     continue
 
                 # avoid reporting any unrelated filewrites
                 #
-                if raw_fields[3].lower() != registration['alert_md5'].lower():
+                if filemod.md5.lower() != registration['alert_md5'].lower():
                     continue
 
-                processed_filewrite['filename'] = self.normalize_file_path(raw_fields[2])
-                processed_filewrite['md5'] = raw_fields[3]
-                processed_filewrite['type'] = self.translate_filetype(int(raw_fields[4])) if str(raw_fields[4]).isdigit() else "<UNKNOWN>"
-                processed_filewrite['timestamp'] = raw_fields[1]
+                processed_filewrite['filename'] = self.normalize_file_path(filemod.path)
+                processed_filewrite['md5'] = filemod.md5
+                processed_filewrite['type'] = filemod.type
+                processed_filewrite['timestamp'] = filemod.timestamp
 
                 processed_filewrites.append(processed_filewrite)
 
             matching_process = {}
             matching_process['endpoint_ip'] = [registration['endpoint_ip']]
-            matching_process['hostname'] = process.get('hostname', '<UNKNOWN>')
-            matching_process['segment_id'] = process.get('segment_id', 0)
-            if process.has_key("unique_id"):
-                id = process["unique_id"]
-            elif process.has_key("id"):
-                id = process["id"]
-            else:
-                self.logger.critical("The process doc has no unique_id nor id.")
-                self.logger.info("The bridge has stopped.")
-                sys.exit(1)
+            matching_process['hostname'] = process.hostname
+            matching_process['segment_id'] = process.segment_id
 
-            matching_process['id'] = id
-            matching_process['process_name'] = process.get('process_name', '<UNKNOWN>')
-            matching_process['process_md5'] = process.get('process_md5', '<UNKNOWN>')
-            cut_id = str(id)[:-9]
-            matching_process['relative_url'] = "/#analyze/%s/%s" % (cut_id, str(process['segment_id']))
-            matching_process['absolute_url'] = "%s/#analyze/%s/%s" % (trim_slash_if_necessary(self.bridge_options['carbonblack_server_url']),
-                                                                       cut_id, str(process['segment_id']))
-            matching_process['start'] = process.get('start', '<UNKNOWN>')
+            matching_process['id'] = process.id
+            matching_process['process_name'] = process.process_name
+            matching_process['process_md5'] = process.process_md5
+            matching_process['relative_url'] = "/#analyze/%s/%s" % (process.id, process.segment_id)
+            matching_process['absolute_url'] = "%s/#analyze/%s/%s" % (
+                trim_slash_if_necessary(self.bridge_options['carbonblack_server_url']),
+                process.id, process.segment_id)
+            matching_process['start'] = process.start
             matching_process['netconns'] = processed_netconns
             matching_process['filewrites'] = processed_filewrites
-            matching_process['last_update'] = process.get('last_update', '<UNKNOWN>')
+            matching_process['last_update'] = process.last_update
 
             # the endpoint IP is 'special' in two ways:
             #  (1) the endpoint IP may not have been explicitly specified in the orignal
@@ -733,16 +699,16 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
             # original endpoints
             #
             try:
-                sensor = self.cb.sensor(process['sensor_id'])
+                sensor = self.cb.select(Sensor, process.sensor_id)
                 ips = []
-                for ip_mac_pair in sensor['network_adapters'].rstrip('|').split('|'):
+                for ip_mac_pair in sensor.network_adapters.rstrip('|').split('|'):
                     ips.append(ip_mac_pair.split(',')[0])
                 matching_process['endpoint_ip'] = ips
-            except:
+            except Exception as e:
                 # endpoint_ip has already been populated with the IP used during
                 # registration
                 #
-                pass
+                logger.error(traceback.format_exc())
 
             matching_processes.append(matching_process)
 
@@ -752,13 +718,14 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
 
         if len(last_search_results) == len(current_search_results):
             last_set = set((x['id'], x['last_update'], len(x['filewrites'])) for x in last_search_results)
-            diff_set = [x for x in current_search_results if (x['id'], x['last_update'], len(x['filewrites'])) not in last_set]
+            diff_set = [x for x in current_search_results if
+                        (x['id'], x['last_update'], len(x['filewrites'])) not in last_set]
             if not diff_set or len(diff_set) < 1:
-                self.logger.debug("Dropping search results for registration [%s] due to having no new results." %
-                                  registration['alert_id'])
+                logger.debug("Dropping search results for registration [%s] due to having no new results." %
+                             registration['alert_id'])
                 return False
 
-        self.logger.debug("Adding search results for registration [%s] to alerts" % registration['alert_id'])
+        logger.debug("Adding search results for registration [%s] to alerts" % registration['alert_id'])
         registration['last_search_results'] = matching_processes
 
         alert = {}
@@ -797,7 +764,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         if 'bridge' in self.options:
             self.bridge_options = self.options['bridge']
         else:
-            self.logger.error("configuration does not contain a [bridge] section")
+            logger.error("configuration does not contain a [bridge] section")
             return False
 
         config_valid = True
@@ -815,7 +782,7 @@ class CarbonBlackFidelisBridge(CbIntegrationDaemon):
         if not config_valid:
             for msg in msgs:
                 sys.stderr.write("%s\n" % msg)
-                self.logger.error(msg)
+                logger.error(msg)
             return False
         else:
             return True
