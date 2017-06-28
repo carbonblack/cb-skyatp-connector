@@ -14,9 +14,8 @@ if __name__ == "__main__":
     if os.path.isfile(cacert_pem_path):
         os.environ["REQUESTS_CA_BUNDLE"] = cacert_pem_path
 
-    daemon = bridge.CarbonBlackFidelisBridge(
-        name,
-        configfile="/mnt/hgfs/Projects/cb-fidelis-connector/root/etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf")
+    daemon = bridge.CarbonBlackFidelisBridge(name,
+                                             configfile="/etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf")
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
             daemon.start()

@@ -1,12 +1,7 @@
-__author__ = 'jgarman'
-
-#from cbopensource.connectors.fidelis.version import __version__
-
 from distutils.core import setup
 from distutils.core import Command
 from distutils.command.bdist_rpm import bdist_rpm
 
-from distutils import log
 from distutils.file_util import write_file
 from distutils.util import change_root, convert_path
 
