@@ -67,6 +67,3 @@ chkconfig --del cb-fidelis-bridge
 %config
 /etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf.template
 
-%config(noreplace)
-/etc/cb/integrations/carbonblack_fidelis_bridge/carbonblack_fidelis_bridge.conf
-
