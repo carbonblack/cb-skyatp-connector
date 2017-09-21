@@ -78,24 +78,22 @@ class SkyAtpBridge(CbIntegrationDaemon):
 
     def run(self):
 
-        SYSENCODE = sys.stdout.encoding
-
         log.info("starting Carbon Black <-> SkyATP Bridge ")
 
         where_clause = " or ".join(("watchlist_name: " + wl for wl in self.watchlists))
 
         while True:
             blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4")
-            blacklist = set(map(lambda bl_ip: bl_ip.encode(SYSENCODE), blacklist))
+            blacklist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), blacklist))
             whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4")
-            whitelist = set(map(lambda wl_ip: wl_ip.encode(SYSENCODE), whitelist))
+            whitelist = set(map(lambda wl_ip: wl_ip.encode("ASCII"), whitelist))
             log.info("blacklist = {}".format(blacklist))
             log.info("whitelist = {}".format(whitelist))
             alerts = list(self.cb.select(Alert).where(where_clause).all())
             resolved_alerts = filter(lambda a: a.status is "Resolved", alerts)
             unresolved_alerts = filter(lambda a: a.status is not "Resolved", alerts)
-            resolved_ips = set(map(lambda a: a.interface_ip.encode(SYSENCODE), resolved_alerts))
-            unresolved_ips = set(map(lambda a: a.interface_ip.encode(SYSENCODE), unresolved_alerts))
+            resolved_ips = set(map(lambda a: a.interface_ip.encode("ASCII"), resolved_alerts))
+            unresolved_ips = set(map(lambda a: a.interface_ip.encode("ASCII"), unresolved_alerts))
             log.info("alerts = {}".format(alerts))
             log.info("resolved_alerts = {}".format(resolved_alerts))
             log.info("unresolved_alerts = {}".format(unresolved_alerts))
