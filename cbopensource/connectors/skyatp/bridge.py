@@ -52,8 +52,7 @@ class SkyAtpBridge(CbIntegrationDaemon):
         self.juniper_apikey = self.get_config_string("juniper_apikey", None)
         self.juniper_client = JuniperSkyAtpClient(session=self.session, api_token=self.juniper_apikey,
                                                   log_level=self.log_level)
-        self.watchlists = {wl: [mintime_utc, self.cb.select(Watchlist).where("name:" + wl).first()] for wl in
-                           self.bridge_options['watchlists'].split(",")}
+        self.watchlists = self.bridge_options['watchlists'].split(",")
         specs = {"M": "minutes", "W": "weeks", "D": "days", "S": "seconds", "H": "hours"}
 
         time_delta = self.bridge_options.get('time_delta',"1M")
@@ -87,61 +86,39 @@ class SkyAtpBridge(CbIntegrationDaemon):
 
         log.info("starting Carbon Black <-> SkyATP Bridge ")
 
+        where_clause = " or ".join(("watchlist_name: " + wl for wl in self.watchlists))
+
+        blacklist  = []
+
         while True:
-            for wlname in self.watchlists:
-                entry = self.watchlists[wlname]
-                wl = entry[1]
-                wlid = int(wl.id)
-                last_checked = entry[0]
-                last_hit = wl.last_hit
-                log.info(
-                    "WL monitor: name = {} , last_checked = {} , last_hit= {}".format(wlname, last_checked, last_hit))
-                log.info("Self.TIME_INCREMENT = {} , (last_checked - last_hit) = {}".format(self.TIME_DELTA,
-                                                                                            (last_checked - last_hit)))
+            alerts = list(self.cb.select(Alert).where(where_clause).all())
+            resolved_alerts = filter(lambda a: a.status is "Resolved", alerts)
+            unresolved_alerts = filter(lambda a: a.status is not "Resolved",alerts)
+            resolved_ips = set(map(lambda a: a.interface_ip.encode(sys.stdout.encoding) ,resolved_alerts))
+            unresolved_ips = set(map(lambda a: a.interface_ip.encode(sys.stdout.encoding) ,unresolved_alerts))
+            log.info("alerts = {}".format(alerts))
+            log.info("resolved_alerts = {}".format(resolved_alerts))
+            log.info("unresolved_alerts = {}".format(unresolved_alerts))
+            log.info("resolved_ips = {}".format(resolved_ips))
+            log.info("unresolved_ips = {}".format(unresolved_ips))
 
-                if last_hit - last_checked >= self.TIME_DELTA:
+            resolved_ips = resolved_ips.difference(unresolved_ips)
 
-                    format_spec = "%Y-%m-%dT%I:%M:%S"
+            log.info("Resolved ips final = {}",resolved_ips)
 
-                    now = datetime.utcnow().replace(tzinfo=TZ_UTC)
+            if len(unresolved_ips):
+                update = {"ipv4": list(unresolved_ips)}
+                log.debug("info = {}".format(update))
+                self.juniper_client.update_infected_hosts_wlbl(update=json.dumps(update))
+            if len(resolved_ips):
+                remove = {"ipv4": list(resolved_ips)}
+                self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
 
-                    ''' [YYYY-MM-DDThh:mm:ss TO YYYY-MM-DDThh:mm:ss] '''
 
-                    search_res = wl.search()
-
-                    search_res = search_res.where(
-                        "watchlist_{}: [ {} TO {} ]".format(wlid, last_checked.strftime(format_spec),
-                                                            now.strftime(format_spec)))
-
-                    log.debug("serach_res = {}".format(list(search_res.all())))
-
-                    sensors = []
-                    for endpoints in map(lambda p: p.sensor, search_res):
-                        sensors.append(endpoints)
-
-                    log.debug("sensors = {}".format(sensors))
-
-                    nics = []
-                    for interfaces in map(lambda s: s.network_interfaces, sensors):
-                        nics.extend(interfaces)
-
-                    log.debug("nics = {}".format(nics))
-
-                    entry[0] = now
-
-                    ipaddrs = []
-                    for nic in nics:
-                        ip = nic.ipaddr.encode("ASCII")
-                        if ip not in ipaddrs:
-                            ipaddrs.append(ip)
-                    update = {"ipv4": ipaddrs}
-                    log.debug("info = {}".format(update))
-                    self.juniper_client.update_infected_hosts_wlbl(update=json.dumps(update))
-                else:
-                    log.info("Last hit not within time_increment")
             cur_time = datetime.utcnow()
             next_time = cur_time + self.TIME_INCREMENT
             time.sleep((next_time - cur_time).total_seconds())
+
 
     # index_types == modules then it's binary events = process
 
