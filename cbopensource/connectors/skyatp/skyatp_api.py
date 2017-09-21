@@ -26,12 +26,11 @@ class JuniperSkyAtpClient(object):
     def infected_hosts_wlbl(self, listtype=None):
         if not listtype:
             listtype = ListType.BLACKSLIT
-        uri = "/v1/skyatp/infect_hosts/" + listtype.name.lower()
+        uri = "/v1/skyatp/infected_hosts/" + listtype.name.lower()
 
         response = self.session.get(url=self.url + uri, headers=self.headers)
         log.debug("get_report: response = %s " % response)
         return response.json()
-
 
     def get_infected_hosts(self):
         uri = "/v1/skatp/infected_hosts"
