@@ -14,7 +14,6 @@ from requests import Session
 from skyatp_api import (JuniperSkyAtpClient, ListType)
 
 log = logging.getLogger(__name__)
-SYSENCODE = sys.stdout.encoding
 
 ZERO = timedelta(0)
 HOUR = timedelta(hours=1)
@@ -78,6 +77,8 @@ class SkyAtpBridge(CbIntegrationDaemon):
         root_logger.addHandler(rlh)
 
     def run(self):
+
+        SYSENCODE = sys.stdout.encoding
 
         log.info("starting Carbon Black <-> SkyATP Bridge ")
 
