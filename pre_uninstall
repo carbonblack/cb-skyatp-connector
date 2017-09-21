@@ -1,0 +1,5 @@
+#!/bin/sh
+
+/etc/init.d/cb-skyatp-bridge stop
+
+chkconfig --del cb-skyatp-bridge
