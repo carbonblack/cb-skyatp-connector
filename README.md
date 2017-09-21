@@ -17,7 +17,7 @@ Once the software is configured, then you can start the connector via service cb
 
 Troubleshooting
 
-If you suspect a problem, please first look at the Wildfire connector logs found here: /var/log/cb/integrations/skyatp/cb-skyatp-bridge.log (There might be multiple files as the logger "rolls over" when the log file hits a certain size).
+If you suspect a problem, please first look at the Sky ATP connector logs found here: /var/log/cb/integrations/skyatp/cb-skyatp-bridge.log (There might be multiple files as the logger "rolls over" when the log file hits a certain size).
 
 If you want to re-run the analysis across your binaries:
 
