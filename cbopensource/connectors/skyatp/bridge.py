@@ -55,11 +55,6 @@ class SkyAtpBridge(CbIntegrationDaemon):
         self.watchlists = self.bridge_options['watchlists'].split(",")
         specs = {"M": "minutes", "W": "weeks", "D": "days", "S": "seconds", "H": "hours"}
 
-        time_delta = self.bridge_options.get('time_delta',"1M")
-        spec = specs[time_delta[-1].upper()]
-        val = int(time_delta[:-1])
-        self.TIME_DELTA = timedelta(**{spec:val})
-
         time_increment = self.bridge_options.get('time_increment',"5M")
         spec = specs[time_increment[-1].upper()]
         val = int(time_increment[:-1])

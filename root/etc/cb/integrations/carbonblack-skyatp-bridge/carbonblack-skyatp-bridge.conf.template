@@ -35,12 +35,6 @@ juniper_apikey=PASSWORD
 watchlists=
 
 ;
-; Time delta - controls the granularity of hit to current timestamp matching
-;
-;
-time_delta=1M
-
-;
 ; Time increment
 ; Controls the length of time between watchlist checks
 time_increment=5M
