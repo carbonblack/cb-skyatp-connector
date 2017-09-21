@@ -11,7 +11,7 @@ from cbapi.response import *
 from cbint.utils.daemon import CbIntegrationDaemon
 from requests import Session
 
-from skyatp_api import (JuniperSkyAtpClient , ListType)
+from skyatp_api import (JuniperSkyAtpClient, ListType)
 
 log = logging.getLogger(__name__)
 SYSENCODE = sys.stdout.encoding
@@ -56,11 +56,10 @@ class SkyAtpBridge(CbIntegrationDaemon):
         self.watchlists = self.bridge_options['watchlists'].split(",")
         specs = {"M": "minutes", "W": "weeks", "D": "days", "S": "seconds", "H": "hours"}
 
-        time_increment = self.bridge_options.get('time_increment',"5M")
+        time_increment = self.bridge_options.get('time_increment', "5M")
         spec = specs[time_increment[-1].upper()]
         val = int(time_increment[:-1])
-        self.TIME_INCREMENT = timedelta(**{spec:val})
-
+        self.TIME_INCREMENT = timedelta(**{spec: val})
 
     def initialize_logging(self):
         log.debug("intializing logging subsystem")
@@ -86,16 +85,16 @@ class SkyAtpBridge(CbIntegrationDaemon):
 
         while True:
             blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4")
-            blacklist = set(map(lambda bl_ip: bl_ip.encode(SYSENCODE),blacklist))
+            blacklist = set(map(lambda bl_ip: bl_ip.encode(SYSENCODE), blacklist))
             whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4")
-            whitelist = set(map(lambda wl_ip: wl_ip.encode(SYSENCODE),whitelist))
+            whitelist = set(map(lambda wl_ip: wl_ip.encode(SYSENCODE), whitelist))
             log.info("blacklist = {}".format(blacklist))
             log.info("whitelist = {}".format(whitelist))
             alerts = list(self.cb.select(Alert).where(where_clause).all())
             resolved_alerts = filter(lambda a: a.status is "Resolved", alerts)
-            unresolved_alerts = filter(lambda a: a.status is not "Resolved",alerts)
-            resolved_ips = set(map(lambda a: a.interface_ip.encode(SYSENCODE) ,resolved_alerts))
-            unresolved_ips = set(map(lambda a: a.interface_ip.encode(SYSENCODE) ,unresolved_alerts))
+            unresolved_alerts = filter(lambda a: a.status is not "Resolved", alerts)
+            resolved_ips = set(map(lambda a: a.interface_ip.encode(SYSENCODE), resolved_alerts))
+            unresolved_ips = set(map(lambda a: a.interface_ip.encode(SYSENCODE), unresolved_alerts))
             log.info("alerts = {}".format(alerts))
             log.info("resolved_alerts = {}".format(resolved_alerts))
             log.info("unresolved_alerts = {}".format(unresolved_alerts))
@@ -104,7 +103,7 @@ class SkyAtpBridge(CbIntegrationDaemon):
 
             resolved_ips = resolved_ips.difference(unresolved_ips).intersection(blacklist)
 
-            log.info("Resolved ips final = {}",resolved_ips)
+            log.info("Resolved ips final = {}", resolved_ips)
 
             if len(unresolved_ips):
                 update = {"ipv4": list(unresolved_ips)}
@@ -114,11 +113,9 @@ class SkyAtpBridge(CbIntegrationDaemon):
                 remove = {"ipv4": list(resolved_ips)}
                 self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
 
-
             cur_time = datetime.utcnow()
             next_time = cur_time + self.TIME_INCREMENT
             time.sleep((next_time - cur_time).total_seconds())
-
 
     # index_types == modules then it's binary events = process
 
@@ -159,7 +156,7 @@ if __name__ == '__main__':
 
     config_path = os.path.join(my_path, "testing.conf")
     daemon = SkyAtpBridge(name='skyatptest', configfile=config_path, work_directory=temp_directory,
-                          logfile=os.path.join(temp_directory, 'test.log') )
+                          logfile=os.path.join(temp_directory, 'test.log'))
 
     logging.getLogger().setLevel(logging.DEBUG)
 
