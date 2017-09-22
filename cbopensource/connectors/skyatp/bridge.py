@@ -80,7 +80,7 @@ class SkyAtpBridge(CbIntegrationDaemon):
 
         log.info("starting Carbon Black <-> SkyATP Bridge ")
 
-        where_clause = " or ".join(("watchlist_name: " + wl for wl in self.watchlists))
+        where_clause = " or ".join(("watchlist_name:" + wl for wl in self.watchlists))
 
         while True:
             blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4")
@@ -90,8 +90,8 @@ class SkyAtpBridge(CbIntegrationDaemon):
             log.info("blacklist = {}".format(blacklist))
             log.info("whitelist = {}".format(whitelist))
             alerts = list(self.cb.select(Alert).where(where_clause).all())
-            resolved_alerts = filter(lambda a: a.status is "Resolved", alerts)
-            unresolved_alerts = filter(lambda a: a.status is not "Resolved", alerts)
+            resolved_alerts = filter(lambda a: a.status == "Resolved", alerts)
+            unresolved_alerts = filter(lambda a: a.status != "Resolved", alerts)
             resolved_ips = set(map(lambda a: a.interface_ip.encode("ASCII"), resolved_alerts))
             unresolved_ips = set(map(lambda a: a.interface_ip.encode("ASCII"), unresolved_alerts))
             log.info("alerts = {}".format(alerts))
@@ -100,6 +100,7 @@ class SkyAtpBridge(CbIntegrationDaemon):
             log.info("resolved_ips = {}".format(resolved_ips))
             log.info("unresolved_ips = {}".format(unresolved_ips))
 
+            #just the resolved
             resolved_ips = resolved_ips.difference(unresolved_ips).intersection(blacklist)
 
             log.info("Resolved ips final = {}", resolved_ips)
@@ -112,9 +113,8 @@ class SkyAtpBridge(CbIntegrationDaemon):
                 remove = {"ipv4": list(resolved_ips)}
                 self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
 
-            cur_time = datetime.utcnow()
-            next_time = cur_time + self.TIME_INCREMENT
-            time.sleep((next_time - cur_time).total_seconds())
+
+            time.sleep(self.TIME_INCREMENT.total_seconds())
 
     # index_types == modules then it's binary events = process
 
