@@ -4,6 +4,9 @@ Carbon Black - Juniper Netowrks Sky ATP connector
 
 The skyatp connector for Carbonblack submits infected hosts detected by a CbR server to the Sky ATP infected hosts blacklist.
 
+Infected hosts are identified by watchlist alters, you can configure any number of watchlists by name in a comma delimited list. 
+As alerts generated from these watchlists are resolved, the CbR SkyAtp connector will remove the host from the blacklist.
+
 Installation Quickstart
 
 As root on your Carbon Black or other RPM based 64-bit Linux distribution server:
@@ -11,7 +14,7 @@ As root on your Carbon Black or other RPM based 64-bit Linux distribution server
 cd /etc/yum.repos.d
 curl -O https://opensource.carbonblack.com/release/x86_64/CbOpenSource.repo
 yum install python-cb-skyatp-connector
-Once the software is installed via YUM, copy the /etc/cb/integrations/skyatp/connector.conf.example file to /etc/cb/integrations/skyatp/connector.conf. Edit this file and place your Carbon Black API key into the carbonblack_server_token variable and your Carbon Black server's base URL into the carbonblack_server_url variable. Next, add your WildFire API keys to the skyatp_api_keys variable. If you have multiple keys, they can be separated by a semicolon (;).
+Once the software is installed via YUM, copy the /etc/cb/integrations/skyatp/connector.conf.example file to /etc/cb/integrations/skyatp/connector.conf. Edit this file and place your Carbon Black API key into the carbonblack_server_token variable and your Carbon Black server's base URL into the carbonblack_server_url variable. Next, add your  API keys to the skyatp_api_keys variable.
 
 Once the software is configured, then you can start the connector via service cb-skyatp-connector start. Any errors will be logged into /var/log/cb/integrations/cb-skyatp-bridge/cb-skyatp-bridge.log. The connector will automatically create a feed in the connected Carbon Black server's console.
 

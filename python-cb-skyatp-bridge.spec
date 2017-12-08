@@ -1,6 +1,6 @@
 %define name python-cb-skyatp-bridge
-%define version 1.0
-%define unmangled_version 1.0
+%define version 0.9
+%define unmangled_version 0.9
 %define release 0
 %global _enable_debug_package 0
 %global debug_package %{nil}
