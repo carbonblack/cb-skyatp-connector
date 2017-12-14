@@ -5,7 +5,8 @@ Carbon Black - Juniper Netowrks Sky ATP connector
 The skyatp connector for Carbonblack submits infected hosts detected by a CbR server to the Sky ATP infected hosts blacklist.
 
 Infected hosts are identified by watchlist alters, you can configure any number of watchlists by name in a comma delimited list. 
-As alerts generated from these watchlists are resolved, the CbR SkyAtp connector will remove the host from the blacklist.
+The skyapt connector will add hosts identified by alerts from these watchlists to the blacklist in SKYATP. 
+As alerts generated from these watchlists are resolved, the CbR SkyAtp connector will remove the host from the blacklist - when there are no longer any outstanding issues needing resolution.
 
 Installation Quickstart
 
