@@ -1,18 +1,18 @@
 #!/bin/sh
 #
-# cb-skyatp-bridge
+# cb-skyatp-connector
 #
 # chkconfig:   2345 55 25
-# description: The Carbon Black Fidelis Bridge is a Carbon Black component \
-#              that integrates with an on-premise Fidelis device to provide \
-#              a Carbon Black feed of Fidelis alerts in your environment.
+# description: The Carbon Black SkyATP Connector is a Carbon Black component \
+#              that integrates with Juniper SkyATP to provide \
+#              a Carbon Black feed of Juniper SkyATP alerts in your environment.
 
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-exec="/usr/share/cb/integrations/carbonblack-skyatp-bridge/bin/cb-skyatp-connector"
-prog="cb-skyatp-bridge"
-pidfile="/var/run/cb/integrations/carbonblack-skyatp-bridge.pid"
+exec="/usr/share/cb/integrations/carbonblack-skyatp-connector/bin/cb-skyatp-connector"
+prog="cb-skyatp-connector"
+pidfile="/var/run/cb/integrations/carbonblack-skyatp-connector.pid"
 
 [ -f /etc/cb/cb.conf ] || {
     echo Carbon Black Enterprise Server setup has not been finalized.
