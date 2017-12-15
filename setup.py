@@ -137,12 +137,12 @@ data_files.append('scripts/cb-skyatp-connector')
 scripts = {
     'cb-skyatp-connector': {
         'spec': 'cb-skyatp-connector.spec',
-        'dest': '/usr/share/cb/integrations/carbonblack-skyatp-bridge/bin/'
+        'dest': '/usr/share/cb/integrations/carbonblack-skyatp-connector/bin/'
     }
 }
 
 setup(
-    name='python-cb-skyatp-bridge',
+    name='python-cb-skyatp-connector',
     version="0.9",
     packages=['cbopensource', 'cbopensource.connectors', 'cbopensource.connectors.skyatp'],
     url='https://github.com/carbonblack/cb-skyatp-connector',
