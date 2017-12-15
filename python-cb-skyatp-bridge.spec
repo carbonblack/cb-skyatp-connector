@@ -1,4 +1,4 @@
-%define name python-cb-skyatp-bridge
+%define name python-cb-skyatp-connector
 %define version 0.9
 %define unmangled_version 0.9
 %define release 0
@@ -43,11 +43,11 @@ rm -rf $RPM_BUILD_ROOT
 #!/bin/sh
 
 mkdir -p /usr/share/cb/integrations/skyatp/db
-chkconfig --add cb-skyatp-bridge
-chkconfig --level 345 cb-skyatp-bridge on
+chkconfig --add cb-skyatp-connector
+chkconfig --level 345 cb-skyatp-connector on
 
 # not auto-starting because conf needs to be updated
-#/etc/init.d/cb-skyatp-bridge start
+#/etc/init.d/cb-skyatp-connector start
 if [ -f "/tmp/__bridge.conf.backup" ]; then
     mv /tmp/__bridge.conf.backup /etc/cb/integrations/carbonblack-skyatp-bridge/carbonblack-skyatp-bridge.conf
 fi
@@ -56,9 +56,9 @@ fi
 %preun
 #!/bin/sh
 
-/etc/init.d/cb-skyatp-bridge stop
+/etc/init.d/cb-skyatp-connector stop
 
-chkconfig --del cb-skyatp-bridge
+chkconfig --del cb-skyatp-connector
 
 
 %files -f INSTALLED_FILES
