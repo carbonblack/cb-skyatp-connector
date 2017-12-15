@@ -1,7 +1,7 @@
 #!/bin/sh
 
-chkconfig --add cb-skyatp-bridge
-chkconfig --level 345 cb-skyatp-bridge on
+chkconfig --add cb-skyatp-connector
+chkconfig --level 345 cb-skyatp-connector on
 
 # not auto-starting because conf needs to be updated
 #/etc/init.d/cb-skyatp-bridge start
