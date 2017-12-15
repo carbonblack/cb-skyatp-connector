@@ -4,4 +4,4 @@ chkconfig --add cb-skyatp-connector
 chkconfig --level 345 cb-skyatp-connector on
 
 # not auto-starting because conf needs to be updated
-#/etc/init.d/cb-skyatp-bridge start
+#/etc/init.d/cb-skyatp-connector start
