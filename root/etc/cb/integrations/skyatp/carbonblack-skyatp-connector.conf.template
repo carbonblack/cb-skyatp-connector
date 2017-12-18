@@ -1,0 +1,50 @@
+[bridge]
+
+;
+; core configuration options
+;
+
+;
+; Carbon Black Enterprise Server options
+;
+
+;
+; Carbon Black Enterprise Server URL
+;
+carbonblack_server_url=https://localhost
+
+;
+; Carbon Black Enterprise Server API Token
+;
+carbonblack_server_token=APITOKEN
+
+;
+; Carbon Black Enterprise Server SSL Verfication
+;
+carbonblack_server_sslverify=0
+
+;
+;juniper apikey
+;
+juniper_apikey=PASSWORD
+
+;
+;Monitored Watchlists
+;
+;
+watchlists=
+
+;
+; Time increment
+; Controls the length of time between watchlist checks
+time_increment=5M
+
+;
+; debugging options
+;
+
+; debug
+; enables various debug output
+;
+debug=0
+

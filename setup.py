@@ -136,8 +136,8 @@ data_files.append('cb-skyatp-connector.spec')
 data_files.append('scripts/cb-skyatp-connector')
 scripts = {
     'cb-skyatp-connector': {
-        'spec': 'cb-skyatp-connector.spec',
-        'dest': '/usr/share/cb/integrations/carbonblack-skyatp-connector/bin/'
+        'spec': 'python-cb-skyatp-connector.spec',
+        'dest': '/usr/share/cb/integrations/skyatp/bin/'
     }
 }
 
