@@ -16,7 +16,7 @@ curl -O https://opensource.carbonblack.com/release/x86_64/CbOpenSource.repo
 yum install python-cb-skyatp-connector
 ```
 
-Once the software is installed via YUM, copy the `/etc/cb/integrations/skyatp/connector.conf.example` file to `/etc/cb/integrations/skyatp/connector.conf`. Edit this file and place your Carbon Black API key into the `carbonblack_server_token` variable and your Carbon Black server's base URL into the `carbonblack_server_url` variable. Next, add your  API keys to the `skyatp_api_keys` variable.
+Once the software is installed via YUM, copy the `/etc/cb/integrations/skyatp/cb-skyatp-connector.conf.example` file to `/etc/cb/integrations/skyatp/cb-skyatp-connector.conf`. Edit this file and place your Carbon Black API key into the `carbonblack_server_token` variable and your Carbon Black server's base URL into the `carbonblack_server_url` variable. Next, add your  API keys to the `skyatp_api_keys` variable.
 
 Once the software is configured, then you can start the connector via service cb-skyatp-connector start. Any errors will be logged into `/var/log/cb/integrations/skyatp/cb-skyatp-connector.log`. The connector will automatically create a feed in the connected Carbon Black server's console.
 

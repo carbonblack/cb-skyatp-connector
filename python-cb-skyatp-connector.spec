@@ -29,8 +29,8 @@ UNKNOWN
 pyinstaller cb-skyatp-connector.spec
 
 %pre
-if [ -f "/etc/cb/integrations/carbonblack-skyatp-bridge/carbonblack-skyatp-bridge.conf" ]; then
-    cp /etc/cb/integrations/carbonblack-skyatp-bridge/carbonblack-skyatp-bridge.conf /tmp/__bridge.conf.backup
+if [ -f "/etc/cb/integrations/skyatp/carbonblack-skyatp-connector.conf" ]; then
+    cp /etc/cb/integrations/skyatp/carbonblack-skyatp-connector.conf /tmp/__bridge.conf.backup
 fi
 
 %install
@@ -49,7 +49,7 @@ chkconfig --level 345 cb-skyatp-connector on
 # not auto-starting because conf needs to be updated
 #/etc/init.d/cb-skyatp-connector start
 if [ -f "/tmp/__bridge.conf.backup" ]; then
-    mv /tmp/__bridge.conf.backup /etc/cb/integrations/carbonblack-skyatp-bridge/carbonblack-skyatp-bridge.conf
+    mv /tmp/__bridge.conf.backup /etc/cb/integrations/skyatp/carbonblack-skyatp-connector.conf
 fi
 
 
@@ -65,5 +65,5 @@ chkconfig --del cb-skyatp-connector
 %defattr(-,root,root)
 
 %config
-/etc/cb/integrations/carbonblack-skyatp-bridge/carbonblack-skyatp-bridge.conf.template
+/etc/cb/integrations/skyatp/carbonblack-skyatp-connector.conf.template
 

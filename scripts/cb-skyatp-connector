@@ -7,14 +7,14 @@ import cbopensource.connectors.skyatp.bridge as bridge
 from cbopensource.connectors.skyatp.version import __version__
 
 if __name__ == "__main__":
-    name = "carbonblack-skyatp-bridge"
+    name = "carbonblack-skyatp-connector"
 
     # set the path to the CA certificate PEM file to our local cache
-    cacert_pem_path = "/usr/share/cb/integrations/carbonblack-skyatp-bridge/cacert.pem"
+    cacert_pem_path = "/usr/share/cb/integrations/skyatp/cacert.pem"
     if os.path.isfile(cacert_pem_path):
         os.environ["REQUESTS_CA_BUNDLE"] = cacert_pem_path
 
-    daemon = bridge.SkyAtpBridge(name,configfile="/etc/cb/integrations/carbonblack-skyatp-bridge/carbonblack-skyatp-bridge.conf")
+    daemon = bridge.SkyAtpBridge(name,configfile="/etc/cb/integrations/skyatp/carbonblack-skyatp-connector.conf")
 
     if len(sys.argv) == 2:
         if 'start' == sys.argv[1]:
