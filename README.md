@@ -3,7 +3,7 @@
 The skyatp connector for Carbon Black submits infected hosts detected by a Cb Response server to the Sky ATP infected hosts blacklist.
 
 Infected hosts are identified by watchlist alters, you can configure any number of watchlists by name in a comma delimited list. 
-The skyapt connector will add hosts identified by alerts from these watchlists to the blacklist in SKYATP. 
+The SKYATP connector will add hosts identified by alerts from these watchlists to the blacklist in SKYATP. 
 As alerts generated from these watchlists are resolved, the CbR SkyAtp connector will remove the host from the blacklist - when there are no longer any outstanding issues needing resolution.
 
 ## Installation Quickstart
