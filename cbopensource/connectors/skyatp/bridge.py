@@ -117,6 +117,17 @@ class SkyAtpBridge(CbIntegrationDaemon):
             time.sleep(self.TIME_INCREMENT.total_seconds())
 
     # index_types == modules then it's binary events = process
+    def clear_blacklist(self,ips_to_remove=None):
+        if not(ips_to_remove):
+            #default to removing the entire blacklist
+            blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4")
+            blacklist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), blacklist))
+            remove = {"ipv4": list(blacklist)}
+            self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
+        else:
+            remove = {"ipv4": ips_to_remove}
+            self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
+
 
     def validate_config(self):
         if 'bridge' in self.options:
@@ -159,13 +170,17 @@ if __name__ == '__main__':
 
     logging.getLogger().setLevel(logging.DEBUG)
 
-    if len(sys.argv) == 2:
+    arglen = len(sys.argv)
+    if arglen >= 2:
         if 'start' == sys.argv[1]:
             daemon.start()
         elif 'stop' == sys.argv[1]:
             daemon.stop()
         elif 'restart' == sys.argv[1]:
             daemon.restart()
+        elif 'clear_blacklist' == sys.argv[1]
+            #default to clearing blacklist else remove just the selected IPS
+            daemon.clear_blacklist() if sys.arglen == 2 else daemon.clear_blacklist(ips_to_remove=sys.argv[1:])
         else:
             print "Unknown command: %s" % sys.argv[1]
             sys.exit(2)
