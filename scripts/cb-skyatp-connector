@@ -15,8 +15,8 @@ if __name__ == "__main__":
         os.environ["REQUESTS_CA_BUNDLE"] = cacert_pem_path
 
     daemon = bridge.SkyAtpBridge(name,configfile="/etc/cb/integrations/skyatp/carbonblack-skyatp-connector.conf")
-
-    if len(sys.argv) == 2:
+    arglen = len(sys.argv)
+    if arglen >= 2:
         if 'start' == sys.argv[1]:
             daemon.start()
         elif 'stop' == sys.argv[1]:
@@ -25,12 +25,20 @@ if __name__ == "__main__":
             daemon.restart()
         elif 'version' == sys.argv[1]:
             print "%s - version %s" % (name, __version__)
+        elif 'show_blacklist' == sys.argv[1]:
+            print daemon.get_blacklist()
+        elif 'clear_blacklist' == sys.argv[1]:
+            daemon.clear_blacklist() if arglen == 2 else daemon.clear_blacklist(sys.argv[2:]) 
+        elif 'show_whitelist' == sys.argv[1]:
+            print daemon.get_whitelist()
+        elif 'clear_whitelist' == sys.argv[1]:
+            daemon.clear_whitelist() if arglen == 2 else daemon.clear_whitelist(sys.argv[2:]) 
         else:
             print "Unknown command: %s" % sys.argv[1]
             sys.exit(2)
 
     else:
-        print "Usage: %s start|stop|restart|version" % sys.argv[0]
+        print "Usage: %s start|stop|restart|version|show_blacklist|clear_blacklist" % sys.argv[0]
         sys.exit(2)
 
     sys.exit(0)
