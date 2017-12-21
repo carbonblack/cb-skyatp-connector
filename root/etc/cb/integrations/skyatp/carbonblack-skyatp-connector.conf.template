@@ -16,7 +16,7 @@ carbonblack_server_url=https://localhost
 ;
 ; Carbon Black Enterprise Server API Token
 ;
-carbonblack_server_token=APITOKEN
+carbonblack_server_token=<CBSERVERTOKEN>
 
 ;
 ; Carbon Black Enterprise Server SSL Verfication
@@ -26,7 +26,7 @@ carbonblack_server_sslverify=0
 ;
 ;juniper apikey
 ;
-juniper_apikey=PASSWORD
+juniper_apikey=<JUNIPERAPIKEY>
 
 ;
 ;Monitored Watchlists
