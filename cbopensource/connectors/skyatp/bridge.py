@@ -128,6 +128,33 @@ class SkyAtpBridge(CbIntegrationDaemon):
             remove = {"ipv4": ips_to_remove}
             self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
 
+    def clear_whitelist(self, ips_to_remove=None):
+        if not (ips_to_remove):
+        # default to removing the entire blacklist
+            whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4")
+            whitelist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), whitelist))
+            remove = {"ipv4": list(whitelist)}
+            self.juniper_client.remove_infected_hosts_wlbl(listtype=ListType.WHITELIST,remove=json.dumps(remove))
+        else:
+            remove = {"ipv4": ips_to_remove}
+            self.juniper_client.remove_infected_hosts_wlbl(listtype=ListType.WHITELIST,remove=json.dumps(remove))
+
+    def add_whitelist(self,ips_to_add):
+        self.juniper_client.update_infected_hosts_wlbl(listtype=ListType.WHITELIST,update=json.dumps({"ipv4":list(ips_to_add)}))
+
+    # get whitelist contents
+    def get_whitelist(self):
+        whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4")
+        whitelist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), whitelist))
+        return list(whitelist)
+
+        # get blacklist contents
+
+    def get_blacklist(self):
+        blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4")
+        blacklist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), blacklist))
+        return list(blacklist)
+
 
     def validate_config(self):
         if 'bridge' in self.options:
@@ -178,9 +205,15 @@ if __name__ == '__main__':
             daemon.stop()
         elif 'restart' == sys.argv[1]:
             daemon.restart()
-        elif 'clear_blacklist' == sys.argv[1]
+        elif 'show_blacklist' == sys.argv[1]:
+            print daemon.get_blacklist()
+        elif 'show_whitelist' == sys.argv[1]:
+            print daemon.get_whitelist()
+        elif 'clear_whitelist' == sys.argv[1]:
+            daemon.clear_whitelist() if arglen == 2 else daemon.clear_whitelist(ips_to_remove=sys.argv[1:])
+        elif 'clear_blacklist' == sys.argv[1]:
             #default to clearing blacklist else remove just the selected IPS
-            daemon.clear_blacklist() if sys.arglen == 2 else daemon.clear_blacklist(ips_to_remove=sys.argv[1:])
+            daemon.clear_blacklist() if arglen == 2 else daemon.clear_blacklist(ips_to_remove=sys.argv[1:])
         else:
             print "Unknown command: %s" % sys.argv[1]
             sys.exit(2)
