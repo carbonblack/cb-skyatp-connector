@@ -84,8 +84,11 @@ class SkyAtpBridge(CbIntegrationDaemon):
 
         while True:
             blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4",[])
-            blacklist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), blacklist))
-            #whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4",[])
+            blacklist =map(lambda bl_ip: bl_ip.encode("ASCII"), blacklist)
+	    blacklist = filter(lambda ip: ip and len(ip) != 0 , blacklist)
+            blacklist = set(blacklist)
+	   
+            #whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4")
             #whitelist = set(map(lambda wl_ip: wl_ip.encode("ASCII"), whitelist))
             log.info("blacklist = {}".format(blacklist))
             #log.info("whitelist = {}".format(whitelist))
@@ -93,7 +96,9 @@ class SkyAtpBridge(CbIntegrationDaemon):
             resolved_alerts = filter(lambda a: a.status == "Resolved", alerts)
             unresolved_alerts = filter(lambda a: a.status != "Resolved", alerts)
             resolved_ips = set(map(lambda a: a.interface_ip.encode("ASCII"), resolved_alerts))
+	    resolved_ips = set(filter(lambda ip: ip and len(ip) != 0 , resolved_ips))
             unresolved_ips = set(map(lambda a: a.interface_ip.encode("ASCII"), unresolved_alerts))
+	    unresolved_ips = set(filter(lambda ip: ip and len(ip) != 0 ,unresolved_ips))
             log.debug("alerts = {}".format(alerts))
             log.debug("resolved_alerts = {}".format(resolved_alerts))
             log.debug("unresolved_alerts = {}".format(unresolved_alerts))

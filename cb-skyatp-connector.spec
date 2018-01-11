@@ -12,7 +12,7 @@ exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name='cb-skyatp-connector',
-          debug=false,
+          debug=False,
           strip=None,
           upx=True,
           console=True )
