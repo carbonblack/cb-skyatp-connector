@@ -143,7 +143,7 @@ scripts = {
 
 setup(
     name='python-cb-skyatp-connector',
-    version="0.9",
+    version="0.9.1",
     packages=['cbopensource', 'cbopensource.connectors', 'cbopensource.connectors.skyatp'],
     url='https://github.com/carbonblack/cb-skyatp-connector',
     license='MIT',
