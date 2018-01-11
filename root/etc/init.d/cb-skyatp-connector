@@ -10,7 +10,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-exec="/usr/share/cb/integrations/carbonblack-skyatp-connector/bin/cb-skyatp-connector"
+exec="/usr/share/cb/integrations/skyatp/bin/cb-skyatp-connector"
 prog="cb-skyatp-connector"
 pidfile="/var/run/cb/integrations/carbonblack-skyatp-connector.pid"
 
