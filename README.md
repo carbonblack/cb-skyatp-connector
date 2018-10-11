@@ -16,7 +16,7 @@ curl -O https://opensource.carbonblack.com/release/x86_64/CbOpenSource.repo
 yum install python-cb-skyatp-connector
 ```
 
-Once the software is installed via YUM, copy the `/etc/cb/integrations/skyatp/cb-skyatp-connector.conf.example` file to `/etc/cb/integrations/skyatp/cb-skyatp-connector.conf`. 
+Once the software is installed via YUM, copy the `/etc/cb/integrations/skyatp/carbonblack-skyatp-connector.conf.template` file to `/etc/cb/integrations/skyatp/carbonblack-skyatp-connector.conf`. 
 
 Edit this conf file and fill in the required variables:
 ```
