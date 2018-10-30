@@ -50,7 +50,7 @@ class SkyAtpBridge(CbIntegrationDaemon):
         tls_adapter = CbAPISessionAdapter(force_tls_1_2=True)
         self.session.mount("https://", tls_adapter)
         self.juniper_apikey = self.get_config_string("juniper_apikey", None)
-	self.juniper_skyurl = self.get_config_string("juniper_skyurl", None)
+        self.juniper_skyurl = self.get_config_string("juniper_skyurl", None)
         self.juniper_client = JuniperSkyAtpClient(session=self.session, api_token=self.juniper_apikey, url=self.juniper_skyurl, 
                                                   log_level=self.log_level)
         self.watchlists = self.bridge_options['watchlists'].split(",")
