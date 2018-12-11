@@ -84,12 +84,12 @@ class SkyAtpBridge(CbIntegrationDaemon):
         where_clause = " or ".join(("watchlist_name:" + wl for wl in self.watchlists))
 
         while True:
-            blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4",[])
+            blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ip",[])
             blacklist =map(lambda bl_ip: bl_ip.encode("ASCII"), blacklist)
 	    blacklist = filter(lambda ip: ip and len(ip) != 0 , blacklist)
             blacklist = set(blacklist)
 	   
-            #whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4")
+            #whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ip")
             #whitelist = set(map(lambda wl_ip: wl_ip.encode("ASCII"), whitelist))
             log.info("blacklist = {}".format(blacklist))
             #log.info("whitelist = {}".format(whitelist))
@@ -112,11 +112,11 @@ class SkyAtpBridge(CbIntegrationDaemon):
             log.info("Resolved ips final = {}", resolved_ips)
 
             if len(unresolved_ips):
-                update = {"ipv4": list(unresolved_ips)}
+                update = {"ip": list(unresolved_ips)}
                 log.debug("info = {}".format(update))
                 self.juniper_client.update_infected_hosts_wlbl(update=json.dumps(update))
             if len(resolved_ips):
-                remove = {"ipv4": list(resolved_ips)}
+                remove = {"ip": list(resolved_ips)}
                 self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
 
 
@@ -126,38 +126,38 @@ class SkyAtpBridge(CbIntegrationDaemon):
     def clear_blacklist(self,ips_to_remove=None):
         if not(ips_to_remove):
             #default to removing the entire blacklist
-            blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4",[])
+            blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ip",[])
             blacklist = set(filter(lambda ip: ip != '', map(lambda bl_ip: bl_ip.encode("ASCII"), blacklist)))
-            remove = {"ipv4": list(blacklist)}
+            remove = {"ip": list(blacklist)}
             self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
         else:
-            remove = {"ipv4": ips_to_remove}
+            remove = {"ip": ips_to_remove}
             self.juniper_client.remove_infected_hosts_wlbl(remove=json.dumps(remove))
 
     def clear_whitelist(self, ips_to_remove=None):
         if not (ips_to_remove):
         # default to removing the entire blacklist
-            whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4",[])
+            whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ip",[])
             whitelist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), whitelist))
-            remove = {"ipv4": list(whitelist)}
+            remove = {"ip": list(whitelist)}
             self.juniper_client.remove_infected_hosts_wlbl(listtype=ListType.WHITELIST,remove=json.dumps(remove))
         else:
-            remove = {"ipv4": ips_to_remove}
+            remove = {"ip": ips_to_remove}
             self.juniper_client.remove_infected_hosts_wlbl(listtype=ListType.WHITELIST,remove=json.dumps(remove))
 
     def add_whitelist(self,ips_to_add):
-        self.juniper_client.update_infected_hosts_wlbl(listtype=ListType.WHITELIST,update=json.dumps({"ipv4":list(ips_to_add)}))
+        self.juniper_client.update_infected_hosts_wlbl(listtype=ListType.WHITELIST,update=json.dumps({"ip":list(ips_to_add)}))
 
     # get whitelist contents
     def get_whitelist(self):
-        whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ipv4",[])
+        whitelist = self.juniper_client.infected_hosts_wlbl(ListType.WHITELIST).get('data', {}).get("ip",[])
         whitelist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), whitelist))
         return list(whitelist)
 
         # get blacklist contents
 
     def get_blacklist(self):
-        blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ipv4",[])
+        blacklist = self.juniper_client.infected_hosts_wlbl(ListType.BLACKLIST).get('data', {}).get("ip",[])
         blacklist = set(map(lambda bl_ip: bl_ip.encode("ASCII"), blacklist))
         return list(blacklist)
 
